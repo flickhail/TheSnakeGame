@@ -1,0 +1,11 @@
+#! /usr/bin/bash
+
+if cmake -S . -B build/
+then
+	cd build/
+	if ninja
+	then
+		clear
+		./Main.exe
+	fi
+fi
