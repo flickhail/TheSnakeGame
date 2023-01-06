@@ -24,23 +24,25 @@ public:
     Snake() = default;
     Snake(const Vec2& initPosition, EDirection initDirection);
 
-
-    //              [GETTERS]
-
-
-
-    //              [UTILITY METHODS]
-
-    void Grow();
-    void Draw() const;
-    void Move();
-    
+    //              [SETTERS]
 
     void Direction(EDirection dir)
     {
         _headSymbol = _headSymbolTable.at(dir);
         _direction = EDirParser(dir);
     }
+
+
+    //              [GETTERS]
+
+    //              [UTILITY METHODS]
+
+    void Grow();
+    void Draw(Renderer::Window& win) const;
+    void Move();
+    
+
+    
     
 private:
     //              [NEW TYPES]

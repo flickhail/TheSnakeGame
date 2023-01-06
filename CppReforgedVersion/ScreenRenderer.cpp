@@ -1,8 +1,6 @@
 #include "ScreenRenderer.hpp"
 
-
-
-void ScreenRenderer::Init(const Vec2& screenSize)
+void Renderer::Init(const Vec2& screenSize)
 {
     initscr();
 	noecho();
@@ -12,7 +10,7 @@ void ScreenRenderer::Init(const Vec2& screenSize)
 	resize_term(screenSize.y, screenSize.x);
 }
 
-Vec2 ScreenRenderer::GetMaxSize()
+Vec2 Renderer::GetMaxSize()
 {
 	int maxX;
 	int maxY;
@@ -22,7 +20,7 @@ Vec2 ScreenRenderer::GetMaxSize()
 	return { maxX, maxY };
 }
 
-Vec2 ScreenRenderer::GetMaxSize(const ScreenRenderer::Window& win)
+Vec2 Renderer::GetMaxSize(const Renderer::Window& win)
 {
 	int maxX;
 	int maxY;
@@ -31,12 +29,12 @@ Vec2 ScreenRenderer::GetMaxSize(const ScreenRenderer::Window& win)
 	return { maxX, maxY };
 }
 
-void ScreenRenderer::Timeout(int milliseconds)
+void Renderer::Timeout(int milliseconds)
 {
 	timeout(milliseconds);
 }
 
-void ScreenRenderer::Timeout(const ScreenRenderer::Window& win, int milliseconds)
+void Renderer::Timeout(const Renderer::Window& win, int milliseconds)
 {
 	wtimeout(win._subWindow, milliseconds);
 }

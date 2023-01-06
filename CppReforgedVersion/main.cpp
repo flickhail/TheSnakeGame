@@ -1,4 +1,4 @@
-#include "GlobalTypes.hpp"
+#include "Screen.hpp"
 #include "ScreenRenderer.hpp"
 #include "MenuScreen.hpp"
 #include "ControlsScreen.hpp"
@@ -25,77 +25,97 @@ const char right_arrow = '>';
 const char up_arrow = '^';
 const char down_arrow = 'v';
 
-class GameLoop
+class GameLoop : public IScreenEventObserver
 {
 public:
-    ActiveState currentGameState;
-    MenuScreen mainMenu{};
-    ControlsScreen controls{};
-    GameScreen game{};
+    bool shouldStop;
 
-    enum Screen
-    {
-        MainMenu,
-        Controls,
-        TryAgain
-    };
+    // Loop frequency of the main loop in hertz
+    int targetFrequency;
 
-    GameLoop() : currentGameState{ ActiveState::MenuScreen }
+    std::unordered_map<Screen::ScreenType, Screen*> screens;
+    Screen::ScreenType currentScreen;
+
+    explicit GameLoop()
+    : currentScreen{ Screen::ScreenType::MainMenu }
+    , shouldStop{ false }
     {
-        // Fill the 'screens'
+        screens[Screen::ScreenType::MainMenu] = new MenuScreen{ 30 };
+        screens[Screen::ScreenType::Controls] = new ControlsScreen{ 30 };
+        screens[Screen::ScreenType::Game] = new GameScreen{ 60 };
+
+        for(const auto& [screenEnum, screenPtr] : screens)
+            screenPtr->eventListener = this;
     }
 
-    ~GameLoop()
+    ~GameLoop() override
     {
         // Deletion of 'screens'
-        for(const auto& [screenName, screenPtr] : screens)
+        for(auto& [screenEnum, screenPtr] : screens)
         {
             delete screenPtr;
+            screenPtr = nullptr;
         }
     }
 
     void Run()
     {
-        while(true)
+        Timer<float> timer;
+        float lastFrame = timer.Elapsed();
+        float deltaTime = 0;
+
+        // Main game loop
+        while(!shouldStop)
         {
-            switch(currentGameState)
+            auto screen = screens[currentScreen];
+            screen->StaticDraw();
+            screen->ResetState();
+
+            // screen processing loop
+            while(!screen->shouldClose)
             {
-                case ActiveState::MenuScreen:
-                    currentGameState = mainMenu.Run();
-                break;
+                deltaTime = timer.Elapsed() - lastFrame;
+                lastFrame = timer.Elapsed();
 
-                case ActiveState::ControlsScreen:
-                    currentGameState = controls.Run();
-                break;
+                float startProcessingTime{ timer.Elapsed() };
+                screen->ProcessInput(UserInput::GetKey());
+                screen->Tick(deltaTime);
+                float procTime{ timer.Elapsed() - startProcessingTime };
 
-                case ActiveState::GameScreen:
-                    currentGameState = game.Run();
-                break;
-                
-                case ActiveState::Exit:
-                return;
+                screen->WaitForUpdate(procTime);
             }
         }
     }
 
-private:
-    std::unordered_map<std::string, int*> screens;
+    // callbacks for 'Screen' objects
+
+    void onEvent(const ExitEvent& event) override
+    {
+        shouldStop = true;
+    }
+
+    void onEvent(const ScreenChangeEvent& event) override
+    {
+        currentScreen = event.screenChangedTo;
+    }
 };
 
 void Intermediate()
 {
     constexpr Vec2 screenSize{ 50, 18 };
-    ScreenRenderer::Init(screenSize);
+    Renderer::Init(screenSize);
 
-    GameLoop gameControl{};
-    gameControl.Run();
+    GameLoop* gameLoop = new GameLoop{};
+    gameLoop->Run();
+    delete gameLoop;
+    gameLoop = nullptr;
 
-    ScreenRenderer::End();
+    Renderer::End();
 }
 
 int main()
 {
     Intermediate();
-    
+
     return 0;
 }

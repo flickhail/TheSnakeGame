@@ -3,11 +3,79 @@
 #include "Screen.hpp"
 #include "ScreenRenderer.hpp"
 #include "UserInput.hpp"
-#include "GlobalTypes.hpp"
+#include "Logger.hpp"
 
 #include <vector>
 
-// [TODO]: refactor in the way of ControlsScreen class
+class SelectionMark : public ILogPrintable
+    {
+    public:
+        bool isVisible{ true };
+
+        SelectionMark() = delete;
+        SelectionMark(Vec2 pos)
+        : isVisible{ true }
+        {
+            currentPos = { pos.x - markIndent, pos.y };
+            Renderer::DrawChar(currentPos, markSymbol);
+
+            // Semantically invalid, but helpful with the first call to 'void Draw()'
+            // so there is no effect of removal of the last printed symbol,
+            // because valid screen coordinates are: 0 < x < maxSize.x (same for Y axis)
+            lastPos = { -1, -1 };
+        }
+
+
+        void SetPosition(Vec2 newPos)
+        {
+            if(isVisible)
+            {
+                lastPos = currentPos;
+                currentPos = { newPos.x - markIndent, newPos.y };
+                Renderer::DrawChar(lastPos, ' ');
+                Renderer::DrawChar(currentPos, markSymbol);
+            }
+            else
+            {
+                currentPos = { newPos.x - markIndent, newPos.y };
+            }
+        }
+
+        void Hide()
+        {
+            Renderer::DrawChar(currentPos, ' ');
+            isVisible = false;
+        }
+
+        void Show()
+        {
+            Renderer::DrawChar(currentPos, markSymbol);
+            isVisible = true;
+        }
+
+        void SetVisibility(bool value)
+        {
+            isVisible = value;
+
+            if(isVisible)
+                Show();
+            else
+                Hide();
+        }
+
+        std::string ToString() const override
+        {
+            std::string tmp{ "SelectionMark pos: " + std::to_string(currentPos.x) + ' ' + std::to_string(currentPos.y) };
+            return tmp;
+        }
+
+    private:
+        const char markSymbol = '>';
+        const int markIndent = 2;
+        Vec2 currentPos{};
+        Vec2 lastPos{};
+    };
+
 class MenuScreen : public Screen
 {
 public:
@@ -25,198 +93,142 @@ public:
 
     //              [CONSTRUCTORS]
 
-    MenuScreen()
-        : Screen{ 60 }
-        , _itemPositions(MenuItem::MaxItemCount)
-        , _currentState { ActiveState::MenuScreen }
+    explicit MenuScreen(int updateFrequency)
+        : Screen{ updateFrequency }
+        , _itemPositions{ MenuItem::MaxItemCount }
+        , _selectionMark{ Vec2{0, 0} }
     {
         // The whole point of this constructor is to calculate interface element's positions and store them in variables
 
-	    Vec2 maxScreenSize;
-        Vec2 curPos;
+	    Vec2 maxScreenSize{ Renderer::GetMaxSize() };
+        Vec2 curPos{ maxScreenSize.x / 2, maxScreenSize.y / 6 };
 
-	    maxScreenSize = ScreenRenderer::GetMaxSize();
+        // Helpful lambda for calculating the center position of the string
+        auto CenterPosOfString = [](const Vec2& pos, const std::string& str) -> Vec2
+        {
+            return { pos.x - static_cast<int>(str.length()) / 2, pos.y };
+        };
 
-	    curPos.x = maxScreenSize.x / 2;
-	    curPos.y = maxScreenSize.y / 6;
-
-        _titlePos = { curPos.x - static_cast<int>(std::string(_gameTitle).length()) / 2, curPos.y };
+        _staticText.push_back({ _gameTitle, CenterPosOfString(curPos, _gameTitle) });
 
 	    curPos.y += 2;
-        _authorPos = { curPos.x - static_cast<int>(std::string(_developedBy).length() / 2), curPos.y };
 
-        Vec2 startButtonPos;
-        Vec2 controlsButtonPos;
-        Vec2 exitButtonPos;
+        _staticText.push_back({ _developedBy, CenterPosOfString(curPos, _developedBy) });
 
 	    curPos.y = maxScreenSize.y / 2 - 1;
-	    startButtonPos.x = curPos.x - std::string(_startButtonText).length() / 2;
-	    startButtonPos.y = curPos.y;
+
+	    _staticText.push_back({ _startButtonText, CenterPosOfString(curPos, _startButtonText) });
 
 	    curPos.y += 1;
-	    controlsButtonPos.x = curPos.x - std::string(_controlsButtonText).length() / 2;
-	    controlsButtonPos.y = curPos.y;
+
+	    _staticText.push_back({ _controlsButtonText, CenterPosOfString(curPos, _controlsButtonText) });
 
 	    curPos.y += 1;
-	    exitButtonPos.x = curPos.x - std::string(_exitButtonText).length() / 2;
-	    exitButtonPos.y = curPos.y;
+	    
+        _staticText.push_back({ _exitButtonText, CenterPosOfString(curPos, _exitButtonText) });
 
-        _itemPositions[MenuItem::Start] = startButtonPos;
-        _itemPositions[MenuItem::Controls] = controlsButtonPos;
-        _itemPositions[MenuItem::Exit] = exitButtonPos;
+        _itemPositions[MenuItem::Start] = _staticText[2].position;
+        _itemPositions[MenuItem::Controls] = _staticText[3].position;
+        _itemPositions[MenuItem::Exit] = _staticText[4].position;
 
-        _currentItem = MenuItem::Start;
-        _selectionMark.SetPosition(_itemPositions[_currentItem]);
+        ResetState();
     }
 
+    void StaticDraw() override
+    {
+        Renderer::EraseScreen();
+
+        for(auto& textField : _staticText)
+            Renderer::DrawText(textField.position, textField.text);
+    }
 
     //              [PUBLIC METHODS]
-
-    ActiveState Run() override
-    {
-        Draw();
-
-        _currentState = ActiveState::MenuScreen;
-
-        while(_currentState == ActiveState::MenuScreen)
-        {
-            ProcessInput(UserInput::GetKey());
-
-            Screen::WaitForUpdate();
-        }
-
-        return _currentState;
-    }
-
-private:
-    //              [NEW TYPES]
-
-    class SelectionMark
-    {
-    public:
-        SelectionMark() = default;
-        SelectionMark(Vec2 pos)
-        {
-            currentPos = { pos.x - markIndent, pos.y };
-
-            // Semantically invalid, but helpful with the first call to 'void Draw()'
-            // so there is no effect of removal of the last printed symbol,
-            // because valid screen coordinates are: 0 < x < maxSize.x (same for Y axis)
-            lastPos = { -1, -1 };
-        }
-
-        void SetPosition(Vec2 newPos)
-        {
-            lastPos = currentPos;
-            currentPos = { newPos.x - markIndent, newPos.y };
-        }
-
-        void Draw()
-        {
-            // Deletes the previous printed symbol
-            ScreenRenderer::DrawChar(lastPos, ' ');
-
-            ScreenRenderer::DrawChar(currentPos, markSymbol);
-        }
-
-    private:
-        const char markSymbol = '>';
-        const int markIndent = 2;
-        Vec2 currentPos{};
-        Vec2 lastPos{};
-    };
-
-
-    //              [PRIVATE VARIABLES]
-
-    const std::string _gameTitle { "Snake!" };
-    const std::string _developedBy {"developed by German"};
-    const std::string _startButtonText {"start"};
-    const std::string _controlsButtonText {"how to play"};
-    const std::string _exitButtonText { "exit" };
-
-    std::vector<Vec2> _itemPositions;
-    Vec2 _titlePos;
-    Vec2 _authorPos;
-
-    MenuItem _currentItem;
-    ActiveState _currentState;
-    SelectionMark _selectionMark;
-
-
-    //              [PRIVATE METHODS]
-
-    // Draws a menu screen using precomputed variables
-    void Draw() override
-    {
-        ScreenRenderer::EraseScreen();
-
-        // Prints the title "Snake!"
-	    ScreenRenderer::DrawText(_titlePos, _gameTitle);
-
-        // Prints the author's name
-	    ScreenRenderer::DrawText(_authorPos, _developedBy);
-
-        // Prints the start button
-	    ScreenRenderer::DrawText(_itemPositions[MenuItem::Start], _startButtonText);
-
-        // Print the controls button
-	    ScreenRenderer::DrawText(_itemPositions[MenuItem::Controls], _controlsButtonText);
-
-        // Prints the exit button
-	    ScreenRenderer::DrawText(_itemPositions[MenuItem::Exit], _exitButtonText);
-
-        // Prints the menu's item selection mark
-        _selectionMark.Draw();
-    }
 
     void ProcessInput(UserInput::Key key) override
     {
         int currItem { _currentItem };
-        int maxItemCount { MenuItem::MaxItemCount };
+        const int maxItemCount { MenuItem::MaxItemCount };
+
         switch(key)
         {
         case UserInput::Key::DownArrow:
             currItem++;
-            if(currItem >= maxItemCount)
-                currItem %= maxItemCount;
+            currItem %= maxItemCount;
+
             _currentItem = static_cast<MenuItem>(currItem);
             _selectionMark.SetPosition(_itemPositions[_currentItem]);
-            _selectionMark.Draw();
         break;
 
         case UserInput::Key::UpArrow:
             currItem--;
             if(currItem < 0)
                 currItem = maxItemCount - 1;
+            
             _currentItem = static_cast<MenuItem>(currItem);
             _selectionMark.SetPosition(_itemPositions[_currentItem]);
-            _selectionMark.Draw();
         break;
 
         case UserInput::Key::Enter:
             switch(_currentItem)
             {
                 case MenuItem::Start:
-                    _currentState = ActiveState::GameScreen;
+                    Screen::shouldClose = true;
+                    Screen::eventListener->onEvent(ScreenChangeEvent{ ScreenType::Game });
                 break;
 
                 case MenuItem::Controls:
-                    _currentState = ActiveState::ControlsScreen;
+                    Screen::shouldClose = true;
+                    Screen::eventListener->onEvent(ScreenChangeEvent{ ScreenType::Controls });
                 break;
 
                 case MenuItem::Exit:
-                    _currentState = ActiveState::Exit;
+                    Screen::shouldClose = true;
+                    Screen::eventListener->onEvent(ExitEvent{});
                 return;
             }
         break;
 
         case UserInput::Key::Escape:
-            _currentState = ActiveState::Exit;
+            Screen::shouldClose = true;
+            Screen::eventListener->onEvent(ExitEvent{});
         break;
 
         default:
             return;
         }
     }
+
+    void Tick(float deltaTime) override
+    {
+        static float time{ 0 };
+        constexpr float blinkInterval{ 0.45f };
+
+        time += deltaTime;
+
+        if(time > blinkInterval)
+        {
+            _selectionMark.SetVisibility(!_selectionMark.isVisible);
+            time = 0;
+        }
+    }
+
+    void ResetState() override
+    {
+        Screen::ResetState();
+        _currentItem = MenuItem::Start;
+        _selectionMark.SetPosition(_itemPositions[MenuItem::Start]);
+    }
+
+private:
+    const std::string _gameTitle { "Snake!" };
+    const std::string _developedBy { "developed by German" };
+    const std::string _startButtonText { "start" };
+    const std::string _controlsButtonText { "how to play" };
+    const std::string _exitButtonText { "exit" };
+
+    std::vector<TextField> _staticText;
+    std::vector<Vec2> _itemPositions;
+
+    MenuItem _currentItem;
+    SelectionMark _selectionMark;
 };

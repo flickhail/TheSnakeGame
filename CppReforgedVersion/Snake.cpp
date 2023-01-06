@@ -17,10 +17,15 @@ Snake::Snake(const Vec2& initPosition, EDirection initDirection)
 
 }
 
-// Draws the snake
-void Snake::Draw() const
+void Snake::Grow()
 {
-    ScreenRenderer::DrawChar(_headPos, _headSymbol);
+
+}
+
+// Draws the snake
+void Snake::Draw(Renderer::Window& win) const
+{
+    Renderer::DrawChar(win, _headPos, _headSymbol);
 }
 
 // Moves the snake

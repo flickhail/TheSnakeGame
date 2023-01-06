@@ -2,23 +2,26 @@
 
 #include "Screen.hpp"
 #include "ScreenRenderer.hpp"
+#include "MenuScreen.hpp"
 
 #include <string>
 #include <vector>
-
 
 class ControlsScreen : public Screen
 {
 public:
     //              [CONSTRUCTORS]
 
-    ControlsScreen()
-        : Screen{ 30 }
+    explicit ControlsScreen(int updateFrequency)
+        : Screen{ updateFrequency }
+        , _selectionMark{ Vec2{0, 0} }
     {
+        ResetState();
+
         // Runtime evaluation of a position of the text on the screen. Was adjusted manually
 
         // Maximum size of the screen in terminal mesuared in 'character places'
-        Vec2 maxPos { ScreenRenderer::GetMaxSize() };
+        Vec2 maxPos { Renderer::GetMaxSize() };
         Vec2 currentPos { maxPos.x / 2, 2 };
 
         // Helpful lambda for calculating the center position of the string
@@ -27,47 +30,72 @@ public:
             return { pos.x - static_cast<int>(str.length()) / 2, pos.y };
         };
 
-        _textToRender.push_back({ _titleText, CenterPosOfString(currentPos, _titleText) });
+        _staticText.push_back({ _titleText, CenterPosOfString(currentPos, _titleText) });
 
         currentPos.y += 2;
-        _textToRender.push_back({ _upArrowText, CenterPosOfString(currentPos, _upArrowText) });
+        _staticText.push_back({ _upArrowText, CenterPosOfString(currentPos, _upArrowText) });
 
         currentPos.y += 1;
-        _textToRender.push_back({ _downArrowText, CenterPosOfString(currentPos, _downArrowText) });
+        _staticText.push_back({ _downArrowText, CenterPosOfString(currentPos, _downArrowText) });
 
         currentPos.y += 1;
-        _textToRender.push_back({ _leftArrowText, CenterPosOfString(currentPos, _leftArrowText) });
+        _staticText.push_back({ _leftArrowText, CenterPosOfString(currentPos, _leftArrowText) });
 
         currentPos.y += 1;
-        _textToRender.push_back({ _rightArrowText, CenterPosOfString(currentPos, _rightArrowText) });
+        _staticText.push_back({ _rightArrowText, CenterPosOfString(currentPos, _rightArrowText) });
 
         currentPos.y += 2;
-        _textToRender.push_back({ _boostText, CenterPosOfString(currentPos, _boostText) });
+        _staticText.push_back({ _boostText, CenterPosOfString(currentPos, _boostText) });
 
         currentPos.y += 2;
-        _textToRender.push_back({ _escapeText, CenterPosOfString(currentPos, _escapeText) });
+        _staticText.push_back({ _escapeText, CenterPosOfString(currentPos, _escapeText) });
 
         currentPos.y = maxPos.y - 2;
-        _textToRender.push_back({ _returnBackText, CenterPosOfString(currentPos, _returnBackText) });
+        _staticText.push_back({ _returnBackText, CenterPosOfString(currentPos, _returnBackText) });
 
-        // '2' is an offset from 'returnBack' text on X axis
-        _textToRender.push_back({ _selectionMark, { _textToRender.back().position.x - 2, _textToRender.back().position.y } });
+        _selectionMarkPos = _staticText.back().position;
+        ResetState();
     }
 
-
-    //              [PUBLIC METHODS]
-
-    ActiveState Run() override
+    // Draws the whole screen
+    void StaticDraw() override
     {
-        Draw();
+        Renderer::EraseScreen();
 
-        UserInput::Key key{ UserInput::Undefined };
-        while( (key = UserInput::GetKey()) != UserInput::Key::Enter)
+        // Draws all the screen text
+        for( const auto& textField : _staticText)
+            Renderer::DrawText(textField.position, textField.text);
+    }
+
+    void ProcessInput(UserInput::Key key) override
+    {
+        switch(key)
         {
-            Screen::WaitForUpdate();
+        case UserInput::Key::Enter:
+            Screen::shouldClose = true;
+            Screen::eventListener->onEvent(ScreenChangeEvent{ ScreenType::MainMenu });
+        break;
         }
+    }
 
-        return ActiveState::MenuScreen;
+    void Tick(float deltaTime) override
+    {
+        static float time{ 0 };
+        constexpr float blinkInterval{ 0.45f };
+
+        time += deltaTime;
+
+        if(time > blinkInterval)
+        {
+            _selectionMark.SetVisibility(!_selectionMark.isVisible);
+            time = 0;
+        }
+    }
+
+    void ResetState() override
+    {
+        Screen::ResetState();
+        _selectionMark.SetPosition(_selectionMarkPos);
     }
 
 private:
@@ -83,28 +111,13 @@ private:
     const std::string _boostText { "press and hold move key to boost up your snake" };
     const std::string _escapeText { "pressing ESC returns you to the main menu" };
     const std::string _returnBackText { "back" };
-    const std::string _selectionMark { '>' };
-
+    
+    SelectionMark _selectionMark;
+    Vec2 _selectionMarkPos;
 
     // Useful storage for rendering the text. If you want to add new text on the screen,
     // simply add 'const std::string', calculate the position of the text, create 'struct TextField'
     // using these two parameters and add this 'struct TextField' to this array.
     // 'void Draw()' will automatically render the new text.
-    std::vector<TextField> _textToRender;
-
-
-    //              [PRIVATE METHODS]
-
-    // Draws the whole screen
-    void Draw() override
-    {
-        ScreenRenderer::EraseScreen();
-
-        // Draws all the screen text
-        for( const auto& [text, textPosition] : _textToRender)
-            ScreenRenderer::DrawText(textPosition, text);
-    }
-
-    void ProcessInput(UserInput::Key key) override
-    {}
+    std::vector<TextField> _staticText;
 };

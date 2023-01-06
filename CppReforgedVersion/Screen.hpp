@@ -1,56 +1,119 @@
 #pragma once
 
 #include "UserInput.hpp"
-#include "GlobalTypes.hpp"
 #include "ScreenRenderer.hpp"
 
 #include <chrono>
 #include <thread>
+
+class IScreenEventObserver;
 
 // Abstract class that represents a screen that renders itself and processes
 // user input.
 class Screen
 {
 public:
-    virtual ActiveState Run() = 0;
+    enum ScreenType
+    {
+        MainMenu,
+        Controls,
+        Game,
+        TryAgain
+    };
 
-protected:
-    // Construct the screen with the frequency of the update loop
-    // Don't forget to call WaitForUpdate() in Run() method, otherwise
-    // there is no sense in this parameter
-    Screen(int frequency)
-        : _frequencyHz{ frequency }
-        , _sleepDuration{ 1.0f / frequency }
-    {}
+    IScreenEventObserver* eventListener;
+    bool shouldClose;
 
+    // Will be called only once at the beginning of the screen processing
+    virtual void StaticDraw() = 0;
+
+    // Processes the user input
+    virtual void ProcessInput(UserInput::Key key) = 0;
+
+    // Process the one tick of the screen
+    virtual void Tick(float deltaTime) = 0;
+
+    virtual void ResetState()
+    {
+        shouldClose = false;
+    };
 
     // For better performance it is advised to call this function,
     // otherwise the Run() loop will be unnecessarily inefficient
-    void WaitForUpdate()
+    void WaitForUpdate(float processTime)
     {
-        std::this_thread::sleep_for(_sleepDuration);
-    }
+        if(_frequencyHz < 0.1)
+            return;
 
-    virtual void Draw() = 0;
-    virtual void ProcessInput(UserInput::Key key) = 0;
+        if( (1.0f / _frequencyHz - processTime) <= 0)
+            return;
+
+        std::chrono::duration<float> sleepDuration{ 1.0f / _frequencyHz - processTime };
+        std::this_thread::sleep_for(sleepDuration);
+    }
 
     // Gets the frequency of the Run() loop
-    int Frequency() const { return _frequencyHz; }
+    int DesiredFrequency() const { return _frequencyHz; }
 
-    // Sets the frequency of the Run() loop
-    void Frequency(int newFreq)
+    // Sets the desired update frequency of the Run() loop
+    // if it is 0, then the update loop
+    // will be performed as fast as possible
+    void DesiredFrequency(int newFreq)
     {
         _frequencyHz = newFreq;
-        _sleepDuration = std::chrono::duration<float>{ 1 / _frequencyHz };
     }
+
+protected:
+    // Construct the screen with desired frequency of the update loop
+    explicit Screen(int frequency)
+        : _frequencyHz{ frequency }
+        , shouldClose{ false }
+        , eventListener{ nullptr }
+    {}
 
 private:
     int _frequencyHz;
-    std::chrono::duration<float> _sleepDuration;
 };
 
-class ScreenStorage
+class Event
 {
-private:
-    static std::vector<Screen*> screenStorage;
+public:
+    enum class EventType
+    {
+        ScreenChanged,
+        ApplicationExit
+    };
+
+    EventType type;
+
+    Event(EventType newType)
+    : type{ newType }
+    {}
+};
+
+class ScreenChangeEvent : public Event
+{
+public:
+    Screen::ScreenType screenChangedTo;
+
+    explicit ScreenChangeEvent(Screen::ScreenType newScreen)
+    : Event{ EventType::ScreenChanged }
+    , screenChangedTo{ newScreen }
+    {}
+};
+
+class ExitEvent : public Event
+{
+public:
+    ExitEvent()
+    : Event{ EventType::ApplicationExit }
+    {}
+};
+
+class IScreenEventObserver
+{
+public:
+    virtual ~IScreenEventObserver() {};
+    virtual void onEvent(const ScreenChangeEvent& event) = 0;
+    virtual void onEvent(const ExitEvent& event) = 0;
 };

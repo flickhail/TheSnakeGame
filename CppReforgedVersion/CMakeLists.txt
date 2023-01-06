@@ -27,7 +27,6 @@ set(
 
 set(
     HeaderFiles
-    GlobalTypes.hpp
     ScreenRenderer.hpp
     UserInput.hpp
     MenuScreen.hpp
@@ -36,6 +35,7 @@ set(
     GameScreen.hpp
     Snake.hpp
     Timer.hpp
+    Logger.hpp
 )
 
 set(CMAKE_CXX_STANDARD 20)
