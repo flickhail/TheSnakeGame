@@ -1,6 +1,0 @@
-# ninja log v5
-24	148	6945606431979443	CMakeFiles/Main.dir/UserInput.cpp.obj	96dc0946c2d5175f
-20	524	6948052359705769	CMakeFiles/Main.dir/ScreenRenderer.cpp.obj	660fe3f7b1ef1d6f
-15	852	6948054623223613	CMakeFiles/Main.dir/Snake.cpp.obj	580f8cc1ef283caf
-15	1386	6948054249601774	CMakeFiles/Main.dir/main.cpp.obj	69ec53409c1daef2
-852	1073	6948054625402034	Main.exe	e4304b132fe08ffc

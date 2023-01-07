@@ -1,3 +1,0 @@
-D:/msys64/home/Герман/Projects/TheSnakeGame/Cversion/build/CMakeFiles/Main.dir
-D:/msys64/home/Герман/Projects/TheSnakeGame/Cversion/build/CMakeFiles/edit_cache.dir
-D:/msys64/home/Герман/Projects/TheSnakeGame/Cversion/build/CMakeFiles/rebuild_cache.dir
