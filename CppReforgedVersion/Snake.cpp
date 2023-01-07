@@ -1,4 +1,5 @@
 #include "Snake.hpp"
+#include <algorithm>
 
 const std::unordered_map<Snake::EDirection, char> Snake::_headSymbolTable
 {
@@ -13,8 +14,12 @@ Snake::Snake(const Vec2& initPosition, EDirection initDirection)
     , _direction{ EDirParser(initDirection) }
     , _headSymbol{ _headSymbolTable.at(initDirection) }
     , _bodyCount{ 0 }
-{
+{}
 
+void Snake::Direction(EDirection dir)
+{
+    _headSymbol = _headSymbolTable.at(dir);
+    _direction = EDirParser(dir);
 }
 
 void Snake::Grow()
@@ -29,9 +34,11 @@ void Snake::Draw(Renderer::Window& win) const
 }
 
 // Moves the snake
-void Snake::Move()
+void Snake::Move(Renderer::Window& win)
 {
     _headPos += _direction;
+    _headPos.x = std::clamp(_headPos.x, 0, win.Size().x - 1);
+    _headPos.y = std::clamp(_headPos.y, 0, win.Size().y - 1);
 
     if(_bodyCount == 0)
         return;

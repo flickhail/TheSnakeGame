@@ -13,6 +13,15 @@
 #include <forward_list>
 #include <unordered_map>
 
+class Food
+{
+public:
+    Food(const Vec2& position)
+    {
+
+    }
+};
+
 class GameScreen : public Screen
 {
 public:
@@ -76,6 +85,14 @@ public:
             _snake.Direction(Snake::EDirection::Right);
         break;
 
+        case UserInput::Key::UpArrow:
+            _snake.Direction(Snake::EDirection::Up);
+        break;
+
+        case UserInput::Key::DownArrow:
+            _snake.Direction(Snake::EDirection::Down);
+        break;
+
         case UserInput::Key::Escape:
             Screen::shouldClose = true;
             Screen::eventListener->onEvent(ScreenChangeEvent{ ScreenType::MainMenu });
@@ -120,8 +137,8 @@ private:
 
     void UpdateSnake()
     {
-        _snake.Move();
         Renderer::EraseScreen(_gameWindow);
+        _snake.Move(_gameWindow);
         _snake.Draw(_gameWindow);
         _gameWindow.Refresh();
     }

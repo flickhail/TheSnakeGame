@@ -38,8 +38,11 @@ public:
         return { -this->x, -this->y };
     }
 
+    // Short for Vec2{ 1, 0 }
     static constexpr Vec2 Right() { return { 1, 0 }; }
-    static constexpr Vec2 Up() { return { 0, 1 }; }
+
+    // Short for Vec2{ 0, -1 }
+    static constexpr Vec2 Up() { return { 0, -1 }; }
 };
 
 // Text field abstraction for simple text rendering
@@ -102,6 +105,11 @@ public:
         void Refresh()
         {
             wrefresh(_subWindow);
+        }
+
+        Vec2 Size() const
+        {
+            return Renderer::GetMaxSize(*this);
         }
 
     private:

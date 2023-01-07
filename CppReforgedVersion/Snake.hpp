@@ -7,8 +7,6 @@
 class Snake
 {
 public:
-    //              [NEW TYPES]
-
     // Type for snake's direction handling
     enum class EDirection
     {
@@ -18,35 +16,16 @@ public:
         Down
     };
 
-
-    //              [CONSTRUCTORS]
-
     Snake() = default;
     Snake(const Vec2& initPosition, EDirection initDirection);
 
-    //              [SETTERS]
-
-    void Direction(EDirection dir)
-    {
-        _headSymbol = _headSymbolTable.at(dir);
-        _direction = EDirParser(dir);
-    }
-
-
-    //              [GETTERS]
-
-    //              [UTILITY METHODS]
+    void Direction(EDirection dir);
 
     void Grow();
     void Draw(Renderer::Window& win) const;
-    void Move();
-    
-
-    
+    void Move(Renderer::Window& win);
     
 private:
-    //              [NEW TYPES]
-
     struct Body
     {
         Vec2 direction;
@@ -58,21 +37,13 @@ private:
         }
     };
 
-
-    //              [CONSTANTS]
-
     static const std::unordered_map<EDirection, char> _headSymbolTable;
-
-    //              [PRIVATE FIELDS]
 
     Vec2 _headPos;
     Vec2 _direction;
     char _headSymbol;
     std::forward_list<Body> _bodyContainer;
     size_t _bodyCount;
-
-
-    //              [PRIVATE METHODS]
 
     bool CheckGameOver();
     static Vec2 EDirParser(EDirection direction);
