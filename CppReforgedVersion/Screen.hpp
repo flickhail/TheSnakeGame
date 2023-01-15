@@ -1,7 +1,6 @@
 #pragma once
 
-#include "UserInput.hpp"
-#include "ScreenRenderer.hpp"
+#include "TerminalAPI.hpp"
 
 #include <chrono>
 #include <thread>
@@ -24,14 +23,14 @@ public:
     IScreenEventObserver* eventListener;
     bool shouldClose;
 
-    // Will be called only once at the beginning of the screen processing
-    virtual void StaticDraw() = 0;
-
     // Processes the user input
     virtual void ProcessInput(UserInput::Key key) = 0;
 
     // Process the one tick of the screen
     virtual void Tick(float deltaTime) = 0;
+
+    // Updates the screen's buffer
+    virtual void UpdateBuffer() = 0;
 
     virtual void ResetState()
     {
@@ -64,12 +63,20 @@ public:
     }
 
 protected:
+    Renderer::Window screenWindow;
+
     // Construct the screen with desired frequency of the update loop
     explicit Screen(int frequency)
         : _frequencyHz{ frequency }
         , shouldClose{ false }
         , eventListener{ nullptr }
+        , screenWindow{ Vec2{ 0, 0 }, Renderer::GetMaxSize() }
     {}
+
+    void ClearScreen()
+    {
+        Renderer::EraseScreen(screenWindow);
+    }
 
 private:
     int _frequencyHz;

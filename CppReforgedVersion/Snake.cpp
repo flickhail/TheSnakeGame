@@ -11,7 +11,9 @@ const std::unordered_map<Snake::EDirection, char> Snake::_headSymbolTable
 
 Snake::Snake(const Vec2& initPosition, EDirection initDirection)
     : _headPos{ initPosition }
+    , _initPosition{ initPosition }
     , _direction{ EDirParser(initDirection) }
+    , _initDirection{ initDirection }
     , _headSymbol{ _headSymbolTable.at(initDirection) }
     , _bodyCount{ 0 }
 {}
@@ -47,6 +49,13 @@ void Snake::Move(Renderer::Window& win)
     {
         bodyPart.Move();
     }
+}
+
+void Snake::ResetState()
+{
+    _headPos = _initPosition;
+    _headSymbol = _headSymbolTable.at(_initDirection);
+    _direction = EDirParser(_initDirection);
 }
 
 // Parses the 'enum class EDirection' to 'struct Vec2'

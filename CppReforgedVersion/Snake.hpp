@@ -1,5 +1,7 @@
 #pragma once
-#include "ScreenRenderer.hpp"
+
+#include "TerminalAPI.hpp"
+
 #include <unordered_map>
 #include <forward_list>
 
@@ -24,6 +26,7 @@ public:
     void Grow();
     void Draw(Renderer::Window& win) const;
     void Move(Renderer::Window& win);
+    void ResetState();
     
 private:
     struct Body
@@ -39,7 +42,9 @@ private:
 
     static const std::unordered_map<EDirection, char> _headSymbolTable;
 
+    Vec2 _initPosition;
     Vec2 _headPos;
+    EDirection _initDirection;
     Vec2 _direction;
     char _headSymbol;
     std::forward_list<Body> _bodyContainer;

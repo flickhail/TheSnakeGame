@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Screen.hpp"
-#include "ScreenRenderer.hpp"
+#include "TerminalAPI.hpp"
 #include "MenuScreen.hpp"
 
 #include <string>
@@ -14,10 +14,8 @@ public:
 
     explicit ControlsScreen(int updateFrequency)
         : Screen{ updateFrequency }
-        , _selectionMark{ Vec2{0, 0} }
+        , _selectionMark{ Vec2{0, 0}, Screen::screenWindow }
     {
-        ResetState();
-
         // Runtime evaluation of a position of the text on the screen. Was adjusted manually
 
         // Maximum size of the screen in terminal mesuared in 'character places'
@@ -25,46 +23,54 @@ public:
         Vec2 currentPos { maxPos.x / 2, 2 };
 
         // Helpful lambda for calculating the center position of the string
-        auto CenterPosOfString = [](const Vec2& pos, const std::string& str) -> Vec2
+        auto StrCentr = [](const Vec2& pos, const std::string& str) -> Vec2
         {
             return { pos.x - static_cast<int>(str.length()) / 2, pos.y };
         };
 
-        _staticText.push_back({ _titleText, CenterPosOfString(currentPos, _titleText) });
+        _staticText.push_back({ _titleText, StrCentr(currentPos, _titleText) });
 
         currentPos.y += 2;
-        _staticText.push_back({ _upArrowText, CenterPosOfString(currentPos, _upArrowText) });
+        _staticText.push_back({ _upArrowText, StrCentr(currentPos, _upArrowText) });
 
         currentPos.y += 1;
-        _staticText.push_back({ _downArrowText, CenterPosOfString(currentPos, _downArrowText) });
+        _staticText.push_back({ _downArrowText, StrCentr(currentPos, _downArrowText) });
 
         currentPos.y += 1;
-        _staticText.push_back({ _leftArrowText, CenterPosOfString(currentPos, _leftArrowText) });
+        _staticText.push_back({ _leftArrowText, StrCentr(currentPos, _leftArrowText) });
 
         currentPos.y += 1;
-        _staticText.push_back({ _rightArrowText, CenterPosOfString(currentPos, _rightArrowText) });
+        _staticText.push_back({ _rightArrowText, StrCentr(currentPos, _rightArrowText) });
 
         currentPos.y += 2;
-        _staticText.push_back({ _boostText, CenterPosOfString(currentPos, _boostText) });
+        _staticText.push_back({ _boostText, StrCentr(currentPos, _boostText) });
 
         currentPos.y += 2;
-        _staticText.push_back({ _escapeText, CenterPosOfString(currentPos, _escapeText) });
+        _staticText.push_back({ _escapeText, StrCentr(currentPos, _escapeText) });
 
         currentPos.y = maxPos.y - 2;
-        _staticText.push_back({ _returnBackText, CenterPosOfString(currentPos, _returnBackText) });
+        _staticText.push_back({ _returnBackText, StrCentr(currentPos, _returnBackText) });
+        _staticText.shrink_to_fit();
 
         _selectionMarkPos = _staticText.back().position;
+
+        StaticDraw();
         ResetState();
     }
 
     // Draws the whole screen
-    void StaticDraw() override
+    void StaticDraw()
     {
-        Renderer::EraseScreen();
+        Screen::ClearScreen();
 
-        // Draws all the screen text
+        // Draws all the static screen text
         for( const auto& textField : _staticText)
-            Renderer::DrawText(textField.position, textField.text);
+            Screen::screenWindow.DrawText(textField.position, textField.text);
+    }
+
+    void UpdateBuffer() override
+    {
+        Screen::screenWindow.Refresh();
     }
 
     void ProcessInput(UserInput::Key key) override

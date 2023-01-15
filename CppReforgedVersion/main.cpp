@@ -1,5 +1,5 @@
+#include "TerminalAPI.hpp"
 #include "Screen.hpp"
-#include "ScreenRenderer.hpp"
 #include "MenuScreen.hpp"
 #include "ControlsScreen.hpp"
 #include "GameScreen.hpp"
@@ -30,13 +30,10 @@ class GameLoop : public IScreenEventObserver
 public:
     bool shouldStop;
 
-    // Loop frequency of the main loop in hertz
-    int targetFrequency;
-
     std::unordered_map<Screen::ScreenType, Screen*> screens;
     Screen::ScreenType currentScreen;
 
-    explicit GameLoop()
+    GameLoop()
     : currentScreen{ Screen::ScreenType::MainMenu }
     , shouldStop{ false }
     {
@@ -44,6 +41,8 @@ public:
         screens[Screen::ScreenType::Controls] = new ControlsScreen{ 30 };
         screens[Screen::ScreenType::Game] = new GameScreen{ 60 };
 
+        // [NOTE]
+        // Observer pattern
         for(const auto& [screenEnum, screenPtr] : screens)
             screenPtr->eventListener = this;
     }
@@ -68,7 +67,6 @@ public:
         while(!shouldStop)
         {
             auto screen = screens[currentScreen];
-            screen->StaticDraw();
             screen->ResetState();
 
             // screen processing loop
@@ -80,6 +78,7 @@ public:
                 float startProcessingTime{ timer.Elapsed() };
                 screen->ProcessInput(UserInput::GetKey());
                 screen->Tick(deltaTime);
+                screen->UpdateBuffer();
                 float procTime{ timer.Elapsed() - startProcessingTime };
 
                 screen->WaitForUpdate(procTime);
@@ -111,6 +110,11 @@ void Intermediate()
     gameLoop = nullptr;
 
     Renderer::End();
+}
+
+void Wait()
+{
+    while(UserInput::GetKey() == UserInput::Key::None);
 }
 
 int main()

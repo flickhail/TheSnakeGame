@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Screen.hpp"
-#include "ScreenRenderer.hpp"
+#include "TerminalAPI.hpp"
 #include "Timer.hpp"
 #include "Snake.hpp"
 
@@ -27,6 +27,7 @@ class GameScreen : public Screen
 public:
     explicit GameScreen(int updateFrequency)
         : Screen{ updateFrequency }
+        , _time{ 0.0f }
     {
         // Position values was adjusted manually,
         // that is why there is some hard-coded magic numbers
@@ -35,11 +36,11 @@ public:
         {
             Vec2 gameWindowPos{ 0, 0 };
             Vec2 gameWindowSize{ maxPos.x, maxPos.y - 3 };
-            _gameWindow = Renderer::Window(gameWindowSize, gameWindowPos);
+            _gameWindow = Screen::screenWindow.CreateSubWindow(gameWindowPos, gameWindowSize);
 
             Vec2 scoreWindowPos{ 0, maxPos.y - 3 };
             Vec2 scoreWindowSize{ maxPos.x, 3 };
-            _scoreWindow = Renderer::Window(scoreWindowSize, scoreWindowPos);
+            _scoreWindow = Screen::screenWindow.CreateSubWindow(scoreWindowPos, scoreWindowSize);
         }
         
         {
@@ -57,20 +58,30 @@ public:
 
         Vec2 gameWinMaxPos{ Renderer::GetMaxSize(_gameWindow) };
         _snake = Snake(Vec2{ gameWinMaxPos.x / 2, gameWinMaxPos.y / 2 }, Snake::EDirection::Left);
+
+        StaticDraw();
     }
 
-    void StaticDraw() override
+    void StaticDraw()
     {
-        Renderer::EraseScreen();
+        Screen::ClearScreen();
 
         for (const auto& [text, textPos] : _scoreWinStaticText)
-            Renderer::DrawText(_scoreWindow, textPos, text);
+            _scoreWindow.DrawText(textPos, text);
 
         _gameWindow.DrawBorder();
-        Vec2 gameWinMaxSize{ Renderer::GetMaxSize(_gameWindow) };
+
+        Vec2 gameWinMaxSize{ _gameWindow.Size() };
 
         // Reduce the size of the game window so there is no need in redrawing the border each frame
-        _gameWindow = Renderer::Window(Vec2{gameWinMaxSize.x - 2, gameWinMaxSize.y - 2}, Vec2{1, 1});
+        _gameWindow = Screen::screenWindow.CreateSubWindow(Vec2{1, 1}, Vec2{gameWinMaxSize.x - 2, gameWinMaxSize.y - 2});
+    }
+
+    void UpdateBuffer() override
+    {
+        Screen::screenWindow.Refresh();
+        _gameWindow.Refresh();
+        _scoreWindow.Refresh();
     }
 
     void ProcessInput(UserInput::Key key) override
@@ -103,16 +114,17 @@ public:
 
     void Tick(float deltaTime) override
     {
-        static float time{ 0 };
-        time += deltaTime;
+        _time += deltaTime;
 
-        UpdateTime(time);
+        UpdateTime(_time);
         UpdateSnake();
     }
 
     void ResetState() override
     {
         Screen::ResetState();
+        _snake.ResetState();
+        _time = 0.0f;
     }
 
 private:
@@ -121,6 +133,8 @@ private:
 
     std::vector<TextField> _scoreWinStaticText;
     TextField _timeNumber;
+    float _time;
+
     TextField _scoreNumber;
 
     Renderer::Window _gameWindow;
@@ -131,15 +145,13 @@ private:
     void UpdateTime(int seconds)
     {
         _timeNumber.text = std::to_string(seconds);
-        Renderer::DrawText(_scoreWindow, _timeNumber.position, _timeNumber.text);
-        _scoreWindow.Refresh();
+        _scoreWindow.DrawText(_timeNumber.position, _timeNumber.text);
     }
 
     void UpdateSnake()
     {
-        Renderer::EraseScreen(_gameWindow);
+        _gameWindow.Erase();
         _snake.Move(_gameWindow);
         _snake.Draw(_gameWindow);
-        _gameWindow.Refresh();
     }
 };

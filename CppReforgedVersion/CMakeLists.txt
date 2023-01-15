@@ -20,15 +20,13 @@ set(
 set(
     SourceFiles
     main.cpp
-    ScreenRenderer.cpp
-    UserInput.cpp
+    TerminalAPI.cpp
     Snake.cpp
 )
 
 set(
     HeaderFiles
-    ScreenRenderer.hpp
-    UserInput.hpp
+    TerminalAPI.hpp
     MenuScreen.hpp
     ControlsScreen.hpp
     Screen.hpp
