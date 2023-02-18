@@ -1,0 +1,6 @@
+[x] Game border calculation error
+[x] Rendering lags. Updating screen buffer excessively?
+[x] Fix the score counter
+[ ] Impl food mechanic
+[ ] Implement the snake's body system
+[ ] Add game over screen
