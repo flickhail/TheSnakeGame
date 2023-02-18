@@ -1,8 +1,8 @@
 #! /usr/bin/bash
 
-if cmake -S . -B build/
+if cmake -S src/ -B bin/
 then
-	cd build/
+	cd bin/
 	if ninja
 	then
 		clear
