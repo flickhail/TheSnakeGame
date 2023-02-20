@@ -1,0 +1,10 @@
+#! /usr/bin/bash
+
+if cmake -S src/ -B bin-release -DCMAKE_BUILD_TYPE=Release
+then
+	if cmake --build bin-release
+	then
+		clear
+		bin-release/Main.exe
+	fi
+fi

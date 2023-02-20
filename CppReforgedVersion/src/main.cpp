@@ -3,6 +3,7 @@
 #include "MenuScreen.hpp"
 #include "ControlsScreen.hpp"
 #include "GameScreen.hpp"
+#include "Log.hpp"
 
 #include <string>
 #include <vector>
@@ -31,7 +32,7 @@ public:
 
         // [NOTE] Observer pattern
         for(auto& [screenEnum, screenPtr] : m_screens)
-            screenPtr->StartListen(this);
+            screenPtr->AddEventObserver(this);
     }
 
     ~GameDriver() override
@@ -90,6 +91,9 @@ public:
 
 void Intermediate()
 {
+    SNK_LOG_INIT("THESNKGAME", "logs/thesnkgame-log.txt");
+    SNK_LOG_INFO("msg: {}", 2);
+    
     constexpr Vec2 screenSize{ 50, 18 };
     Renderer::Init(screenSize);
 
@@ -106,13 +110,7 @@ void Wait()
 
 int main()
 {
-    //Intermediate();
-#ifdef SNK_TEST
-    std::cout << "SNK_TEST is DEFINED\n";
-#endif
+    Intermediate();
 
-#ifdef SNK_RELEASE
-    std::cout << "SNK_RELEASE is DEFINED\n";
-#endif
     return 0;
 }

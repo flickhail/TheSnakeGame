@@ -47,7 +47,7 @@ public:
         std::this_thread::sleep_for(sleepDuration);
     }
 
-    void StartListen(IScreenEventObserver* observer)
+    void AddEventObserver(IScreenEventObserver* observer)
     {
         eventListener = observer;
     }

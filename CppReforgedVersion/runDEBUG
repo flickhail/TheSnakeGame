@@ -1,0 +1,10 @@
+#! /usr/bin/bash
+
+if cmake -S src/ -B bin-debug/ -DCMAKE_BUILD_TYPE=Debug
+then
+	if cmake --build bin-debug
+	then
+		clear
+		bin-debug/Main.exe
+	fi
+fi
