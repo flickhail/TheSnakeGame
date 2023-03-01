@@ -1,4 +1,6 @@
 .vscode
-CppReforgedVersion/bin/
+
+CppReforgedVersion/bin-release/
+CppReforgedVersion/bin-debug/
 Cversion/build/
 

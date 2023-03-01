@@ -58,7 +58,6 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     string(APPEND CMAKE_CXX_FLAGS "-DSNK_RELEASE")
 endif()
 
-set(${RUNTIME_OUTPUT_DIRECTORY} ${CMAKE_SOURCE_DIR}/../bin-${CMAKE_HOST_SYSTEM_NAME}-${CMAKE_BUILD_TYPE})
 add_executable(Main ${SourceFiles} ${HeaderFiles})
 target_include_directories(Main PUBLIC ${IncludePath})
 target_link_libraries(Main ${Libraries})

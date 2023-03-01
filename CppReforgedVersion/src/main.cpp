@@ -16,12 +16,7 @@
 
 class GameDriver : public IScreenEventObserver
 {
-private:
-    bool m_shouldStop;
-    std::unordered_map<Screen::ScreenType, Screen*> m_screens;
-    Screen::ScreenType m_currentScreen;
 public:
-
     GameDriver()
     : m_currentScreen{ Screen::ScreenType::MainMenu }
     , m_shouldStop{ false }
@@ -87,12 +82,16 @@ public:
     {
         m_currentScreen = event.screenChangedTo;
     }
+
+private:
+    bool m_shouldStop;
+    std::unordered_map<Screen::ScreenType, Screen*> m_screens;
+    Screen::ScreenType m_currentScreen;
 };
 
 void Intermediate()
 {
     SNK_LOG_INIT("THESNKGAME", "logs/thesnkgame-log.txt");
-    SNK_LOG_INFO("msg: {}", 2);
     
     constexpr Vec2 screenSize{ 50, 18 };
     Renderer::Init(screenSize);
